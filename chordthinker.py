@@ -244,16 +244,6 @@ class ChordThinkerApp(tk.Tk):
 
         tk.Button(win, text="保存して閉じる", command=save_and_close, bg=TYPE_COLORS['sus4'], fg="black", relief=tk.FLAT, font=(FONT_FAMILY, 10, "bold")).pack(pady=30)
 
-    def set_api_key(self):
-        key = simpledialog.askstring("API Key", "APIキーを入力:")
-        if key:
-            self.api_key = key.strip()
-            self.cached_model_name = None
-            try:
-                genai.configure(api_key=self.api_key)
-                messagebox.showinfo("Success", "設定完了！")
-            except Exception as e:
-                messagebox.showerror("Error", f"設定失敗: {e}")
 
     # --- UI ---
     def setup_ui(self):
@@ -288,7 +278,6 @@ class ChordThinkerApp(tk.Tk):
         self.preset_combo = ttk.Combobox(right_frame, textvariable=self.preset_var, values=list(PRESET_PROGRESSIONS.keys()), state="readonly", width=18)
         self.preset_combo.current(0)
         self.preset_combo.pack(side=tk.RIGHT, padx=2)
-        tk.Button(right_frame, text="🔑 API設定", command=self.set_api_key, bg="#007acc", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=5)
 
         # Container for Canvas and Piano Roll
         self.middle_container = tk.Frame(self, bg=C_BG_MAIN)
@@ -414,17 +403,6 @@ class ChordThinkerApp(tk.Tk):
         self.bind("<BackSpace>", self.delete_selection)
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-s>", lambda e: self.save_project_overwrite())
-
-    def set_api_key(self):
-        key = simpledialog.askstring("API Key", "APIキーを入力:")
-        if key:
-            self.api_key = key.strip()
-            self.cached_model_name = None
-            try:
-                genai.configure(api_key=self.api_key)
-                messagebox.showinfo("Success", "設定完了！")
-            except Exception as e:
-                messagebox.showerror("Error", f"設定失敗: {e}")
 
     # --- Project Management ---
     def get_project_dir(self):
@@ -1023,12 +1001,17 @@ class ChordThinkerApp(tk.Tk):
 
     def play_preview(self):
         if not self.progression or self.is_playing: return
+        
         local_temp_dir = os.path.join(os.getcwd(), "temp")
         if not os.path.exists(local_temp_dir): os.makedirs(local_temp_dir)
+        
+        self.cleanup_temp_files() # Clean old files
         fd, temp_path = tempfile.mkstemp(suffix=".mid", dir=local_temp_dir)
         os.close(fd)
         self.current_temp_file = temp_path
+        
         _, bpm = self.generate_midi(temp_path)
+        
         try:
             pygame.mixer.music.load(temp_path)
             pygame.mixer.music.play()
