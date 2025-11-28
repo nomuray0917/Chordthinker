@@ -153,6 +153,28 @@ class ChordThinkerApp(tk.Tk):
         name = self.project_name
         mark = "*" if self.is_modified else ""
         self.title(f"CHORD THINKER - {name}{mark}")
+    def load_config(self):
+        default_config = {
+            "api_key": "",
+            "default_bpm": "120",
+            "default_instrument": "Grand Piano",
+            "default_duration": "全音符"
+        }
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                    return {**default_config, **json.load(f)}
+            except: return default_config
+        else:
+            # ファイルが存在しない場合、作成して書き込む
+            try:
+                with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump(default_config, f, indent=4)
+                print(f"Created default config file: {CONFIG_FILE}")
+                return default_config
+            except Exception as e:
+                print(f"Warning: Could not create config file: {e}")
+                return default_config
 
     def load_config(self):
         default_config = {
