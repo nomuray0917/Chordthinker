@@ -88,7 +88,7 @@ PRESET_PROGRESSIONS = {
     "王道進行 (Major)": ["F_Maj", "G_Maj", "E_Min", "A_Min"],
     "カノン進行 (Major)": ["C_Maj", "G_Maj", "A_Min", "E_Min", "F_Maj", "C_Maj", "F_Maj", "G_Maj"],
     "小室進行 (Minor)": ["A_Min", "F_Maj", "G_Maj", "C_Maj"],
-    "Just The Two Of Us": ["F_Maj7", "E_7", "A_m7", "G_m7", "C_7"],
+    "丸サ進行 (Just The Two Of Us)": ["F_Maj7", "E_7", "A_m7", "C_7"],
     "パッシングdim (例)": ["C_Maj", "C#_dim7", "D_m7", "G_7"],
     "J-Popバラード": ["A_Min", "E_Min", "F_Maj", "G_Maj"],
 }
@@ -105,7 +105,6 @@ class ChordThinkerApp(tk.Tk):
         self.geometry("1300x950")
         self.configure(bg=C_BG_MAIN)
         
-        # Audio Init
         pygame.init()
         pygame.mixer.init()
         self.cleanup_temp_files(force=True)
@@ -123,7 +122,6 @@ class ChordThinkerApp(tk.Tk):
         self.drag_item_index = None
         self.drag_start_x = 0
         
-        # Piano Roll
         self.show_piano_roll = False
         self.pr_note_drag_index = None
         self.pr_start_y = 0
@@ -133,7 +131,6 @@ class ChordThinkerApp(tk.Tk):
         self.pr_min_note = 24   # C1
         self.pr_max_note = 96   # C7
         
-        # API Key
         self.api_key = self.config.get("api_key", "").strip()
         self.is_thinking = False
         self.cached_model_name = None
@@ -178,7 +175,6 @@ class ChordThinkerApp(tk.Tk):
         except Exception as e:
             messagebox.showerror("Error", f"設定の保存に失敗: {e}")
 
-    # --- ECO SYSTEM ---
     def get_temp_dir(self):
         base = os.getcwd()
         temp_dir = os.path.join(base, "temp")
@@ -202,7 +198,6 @@ class ChordThinkerApp(tk.Tk):
         self.cleanup_temp_files(force=True)
         messagebox.showinfo("完了", "一時ファイルを削除しました。")
 
-    # --- Settings ---
     def open_settings(self):
         win = tk.Toplevel(self)
         win.title("環境設定")
@@ -211,24 +206,20 @@ class ChordThinkerApp(tk.Tk):
         x = self.winfo_rootx() + self.winfo_width()//2 - 225
         y = self.winfo_rooty() + self.winfo_height()//2 - 175
         win.geometry(f"+{x}+{y}")
-
         lbl_font = (FONT_FAMILY, 10)
         tk.Label(win, text="Google Gemini API Key:", bg=C_BG_PANEL, fg="white", font=lbl_font).pack(anchor="w", padx=20, pady=(20, 5))
         entry_key = tk.Entry(win, width=50, font=lbl_font)
         entry_key.insert(0, self.config.get("api_key", ""))
         entry_key.pack(padx=20)
         tk.Label(win, text="※設定すると次回から自動で読み込まれます", bg=C_BG_PANEL, fg="#888888", font=(FONT_FAMILY, 8)).pack(anchor="w", padx=20)
-
         tk.Label(win, text="デフォルトBPM:", bg=C_BG_PANEL, fg="white", font=lbl_font).pack(anchor="w", padx=20, pady=(15, 5))
         entry_bpm = tk.Entry(win, width=10, font=lbl_font)
         entry_bpm.insert(0, self.config.get("default_bpm", "120"))
         entry_bpm.pack(anchor="w", padx=20)
-
         tk.Label(win, text="デフォルト楽器:", bg=C_BG_PANEL, fg="white", font=lbl_font).pack(anchor="w", padx=20, pady=(15, 5))
         combo_inst = ttk.Combobox(win, values=list(INSTRUMENT_MAP.keys()), state="readonly", width=30)
         combo_inst.set(self.config.get("default_instrument", "Grand Piano"))
         combo_inst.pack(anchor="w", padx=20)
-
         def save_and_close():
             new_key = entry_key.get().strip()
             self.config["api_key"] = new_key
@@ -241,24 +232,19 @@ class ChordThinkerApp(tk.Tk):
             self.advice_label.config(text=msg)
             messagebox.showinfo("保存", "設定を保存しました。")
             win.destroy()
-
         tk.Button(win, text="保存して閉じる", command=save_and_close, bg=TYPE_COLORS['sus4'], fg="black", relief=tk.FLAT, font=(FONT_FAMILY, 10, "bold")).pack(pady=30)
 
 
-    # --- UI ---
     def setup_ui(self):
         header = tk.Frame(self, bg=C_BG_MAIN, pady=10)
         header.pack(fill=tk.X, padx=20)
         tk.Label(header, text="CHORD THINKER", bg=C_BG_MAIN, fg="#aaaaaa", font=(FONT_FAMILY, 14, "bold")).pack(side=tk.LEFT)
-        
         right_frame = tk.Frame(header, bg=C_BG_MAIN)
         right_frame.pack(side=tk.RIGHT)
-        
         tk.Button(right_frame, text="🗑️", command=self.manual_cleanup, width=3, bg="#444444", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
         tk.Button(right_frame, text="？", command=self.show_help, width=3, bg="#444444", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
         tk.Button(right_frame, text="⚙ 設定", command=self.open_settings, bg="#007acc", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
         tk.Label(right_frame, text=" | ", bg=C_BG_MAIN, fg="#555555").pack(side=tk.RIGHT, padx=2)
-        
         self.save_btn = tk.Menubutton(right_frame, text="💾 保存 ▼", bg="#555555", fg="white", relief=tk.FLAT, direction='below')
         self.save_menu = tk.Menu(self.save_btn, tearoff=0)
         self.save_menu.add_command(label="上書き保存 (Ctrl+S)", command=self.save_project_overwrite)
@@ -267,22 +253,18 @@ class ChordThinkerApp(tk.Tk):
         self.save_menu.add_command(label="コピーを保存...", command=self.save_project_copy)
         self.save_btn.config(menu=self.save_menu)
         self.save_btn.pack(side=tk.RIGHT, padx=2)
-
         tk.Button(right_frame, text="📂 開く", command=self.load_project, bg="#555555", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
         tk.Button(right_frame, text="📄 新規", command=self.new_project, bg="#555555", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
-        
         tk.Label(right_frame, text=" | ", bg=C_BG_MAIN, fg="#555555").pack(side=tk.RIGHT, padx=2)
-        
         tk.Button(right_frame, text="追加", command=self.load_preset, bg="#444444", fg="white", relief=tk.FLAT).pack(side=tk.RIGHT, padx=2)
         self.preset_var = tk.StringVar()
         self.preset_combo = ttk.Combobox(right_frame, textvariable=self.preset_var, values=list(PRESET_PROGRESSIONS.keys()), state="readonly", width=18)
         self.preset_combo.current(0)
         self.preset_combo.pack(side=tk.RIGHT, padx=2)
+       
 
-        # Container for Canvas and Piano Roll
         self.middle_container = tk.Frame(self, bg=C_BG_MAIN)
         self.middle_container.pack(fill=tk.X, padx=20, pady=5)
-
         self.canvas = tk.Canvas(self.middle_container, height=160, bg="#111111", highlightthickness=0)
         self.canvas.pack(fill=tk.X, side=tk.TOP)
         self.canvas.bind("<Button-1>", self.on_canvas_click)
@@ -292,40 +274,31 @@ class ChordThinkerApp(tk.Tk):
         
         toggle_frame = tk.Frame(self, bg=C_BG_MAIN)
         toggle_frame.pack(fill=tk.X, padx=20)
-        self.pr_toggle_btn = tk.Button(toggle_frame, text="🎹 ピアノロール (開く)", command=self.toggle_piano_roll,
-                                       bg="#333333", fg="white", relief=tk.FLAT, font=(FONT_FAMILY, 9))
+        self.pr_toggle_btn = tk.Button(toggle_frame, text="🎹 ピアノロール (開く)", command=self.toggle_piano_roll, bg="#333333", fg="white", relief=tk.FLAT, font=(FONT_FAMILY, 9))
         self.pr_toggle_btn.pack(side=tk.LEFT)
-
         self.pr_frame = tk.Frame(self.middle_container, bg=C_PR_BG, height=250)
         self.pr_scrollbar = tk.Scrollbar(self.pr_frame, orient="vertical")
-        self.pr_canvas = tk.Canvas(self.pr_frame, bg=C_PR_BG, highlightthickness=0, 
-                                   height=250, yscrollcommand=self.pr_scrollbar.set)
+        self.pr_canvas = tk.Canvas(self.pr_frame, bg=C_PR_BG, highlightthickness=0, height=250, yscrollcommand=self.pr_scrollbar.set)
         self.pr_scrollbar.config(command=self.pr_canvas.yview)
-        
         self.pr_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.pr_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
         self.pr_canvas.bind("<Button-1>", self.on_pr_click)
         self.pr_canvas.bind("<B1-Motion>", self.on_pr_drag)
         self.pr_canvas.bind("<ButtonRelease-1>", self.on_pr_release)
 
         ctrl = tk.Frame(self, bg=C_BG_PANEL, pady=12, padx=15)
         ctrl.pack(fill=tk.X, padx=20, pady=10)
-
         self.make_label(ctrl, "楽器:")
         self.inst_var = tk.StringVar(value=self.config.get("default_instrument", "Grand Piano"))
         self.inst_combo = ttk.Combobox(ctrl, textvariable=self.inst_var, values=list(INSTRUMENT_MAP.keys()), width=15, state="readonly", font=(FONT_FAMILY, 10))
         self.inst_combo.pack(side=tk.LEFT, padx=5)
-
         self.make_label(ctrl, "BPM:")
         self.bpm_var = tk.StringVar(value=self.config.get("default_bpm", "120"))
         tk.Entry(ctrl, textvariable=self.bpm_var, width=5, bg="#333333", fg="white", relief=tk.FLAT, font=(FONT_FAMILY, 11)).pack(side=tk.LEFT, padx=5)
-
         self.make_label(ctrl, "音符:")
         self.dur_var = tk.StringVar(value="全音符")
         self.dur_combo = ttk.Combobox(ctrl, textvariable=self.dur_var, values=list(DURATION_OPTIONS.keys()), width=10, state="readonly", font=(FONT_FAMILY, 10))
         self.dur_combo.pack(side=tk.LEFT, padx=5)
-
         self.make_label(ctrl, "Key:")
         self.key_root_var = tk.StringVar(value="C")
         self.key_root_combo = ttk.Combobox(ctrl, textvariable=self.key_root_var, values=ROOTS, width=3, state="readonly", font=(FONT_FAMILY, 11))
@@ -333,13 +306,10 @@ class ChordThinkerApp(tk.Tk):
         self.key_scale_var = tk.StringVar(value="Major")
         self.key_scale_combo = ttk.Combobox(ctrl, textvariable=self.key_scale_var, values=["Major", "Minor"], width=6, state="readonly", font=(FONT_FAMILY, 11))
         self.key_scale_combo.pack(side=tk.LEFT, padx=5)
-        
         self.key_root_combo.bind("<<ComboboxSelected>>", lambda e: self.update_suggestions_logic(self.get_last_selected_chord_name()))
         self.key_scale_combo.bind("<<ComboboxSelected>>", lambda e: self.update_suggestions_logic(self.get_last_selected_chord_name()))
-
         self.make_btn(ctrl, "▶ 再生", self.play_preview, bg=TYPE_COLORS['sus4'], fg="black")
         self.make_btn(ctrl, "■ 停止", self.stop_preview, bg=TYPE_COLORS['aug'])
-        
         self.make_btn(ctrl, "１つ削除", self.delete_selection, bg="#555555", side=tk.RIGHT)
         self.make_btn(ctrl, "全消去", self.reset_progression, bg="#333333", side=tk.RIGHT)
         self.make_btn(ctrl, "MIDI出力", self.export_midi, bg=TYPE_COLORS['Maj'], fg="black", side=tk.RIGHT)
@@ -404,7 +374,6 @@ class ChordThinkerApp(tk.Tk):
         self.bind("<Control-a>", self.select_all)
         self.bind("<Control-s>", lambda e: self.save_project_overwrite())
 
-    # --- Project Management ---
     def get_project_dir(self):
         base = os.getcwd()
         proj_dir = os.path.join(base, "project")
@@ -506,7 +475,6 @@ class ChordThinkerApp(tk.Tk):
                 messagebox.showinfo("Success", "読み込みました。")
             except Exception as e: messagebox.showerror("Error", f"読み込み失敗: {e}")
 
-    # --- Canvas Actions ---
     def on_canvas_click(self, event):
         clicked_x = event.x
         clicked_index = -1
@@ -597,7 +565,6 @@ class ChordThinkerApp(tk.Tk):
                 edit_win.destroy()
         tk.Button(edit_win, text="変更", command=apply_change, bg=TYPE_COLORS['sus4'], fg="black", relief=tk.FLAT).pack(pady=15)
 
-    # --- Piano Roll ---
     def toggle_piano_roll(self):
         if self.show_piano_roll:
             self.pr_frame.pack_forget()
@@ -608,6 +575,8 @@ class ChordThinkerApp(tk.Tk):
             self.pr_toggle_btn.config(text="🎹 ピアノロール (閉じる)")
             self.show_piano_roll = True
             self.draw_piano_roll()
+            # Auto scroll to middle (C4=0.5)
+            self.pr_canvas.yview_moveto(0.4)
 
     def draw_piano_roll(self):
         self.pr_canvas.delete("all")
@@ -638,7 +607,6 @@ class ChordThinkerApp(tk.Tk):
         self.pr_note_drag_index = None
         sel_idx = self.get_selected_index()
         if sel_idx is None: return
-        # Adjust y with scroll
         canvas_y = self.pr_canvas.canvasy(event.y)
         item = self.pr_canvas.find_closest(event.x, canvas_y)
         tags = self.pr_canvas.gettags(item)
@@ -711,7 +679,6 @@ class ChordThinkerApp(tk.Tk):
         if 'voicing' in chord_data: return chord_data['voicing']
         return self.get_default_notes(chord_data['name'])
 
-    # --- Logic & AI ---
     def get_key_offset(self):
         return NOTE_MAP.get(self.key_root_var.get(), 0)
 
@@ -900,7 +867,8 @@ class ChordThinkerApp(tk.Tk):
         if self.selection:
             idx = sorted(list(self.selection))[-1]
             return self.progression[idx]['name']
-        if self.progression: return self.progression[-1]['name']
+        if self.progression:
+            return self.progression[-1]['name']
         return None
 
     def add_chord(self, chord_name):
